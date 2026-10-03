@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Operations Panel - Ride Dispatch Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+        .admin-section { margin-bottom: 24px; }
+        .chart-container {
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 12px;
+            padding: 20px;
+            color: #FFFFFF;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            max-width: 600px;
+            width: 90%;
+            padding: 28px;
+            color: #FFFFFF;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+        }
+    </style>
+</head>
+<body class="full-page-bg">
+    <div id="admin-app" class="app-container">
+        <!-- Auth Warning Banner (Visible if unauthenticated) -->
+        <div id="admin-auth-warning" class="card" style="display: none; border-left: 4px solid var(--accent-yellow); margin-bottom: 16px;">
+            <div class="flex-between-stack">
+                <div>
+                    <strong style="color: var(--text-primary); font-size: 14px; display: inline-flex; align-items: center; gap: 6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> Admin Authentication Required</strong>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                        You are currently viewing in read-only preview mode. Please log in as Admin to execute overrides.
+                    </p>
+                </div>
+                <button id="btn-quick-admin-login" class="btn btn-yellow">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> Log in as Admin (admin / admin123)
+                </button>
+            </div>
+        </div>
+
+        <!-- Dynamic Header Navbar -->
+        <header id="navbar-header"></header>
+
+        <!-- Section 1: Dashboard Home (At-a-glance Health Check) -->
+        <section class="admin-section">
+            <div class="card-header" style="margin-bottom: 12px; border: none;">
+                <div class="card-title">Dashboard Health Check (At-a-glance)</div>
+                <span class="code" id="admin-last-sync">Syncing...</span>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+                    </div>
+                    <div class="metric-content">
+                        <div class="val" id="adm-rides-today">0</div>
+                        <div class="lbl">Total Rides Today</div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    </div>
+                    <div class="metric-content">
+                        <div class="val" id="adm-completion-rate" style="color: var(--status-green);">100%</div>
+                        <div class="lbl">Completion Rate</div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                    <div class="metric-content">
+                        <div class="val" id="adm-avg-match-time">38s</div>
+                        <div class="lbl">Avg Match Time</div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9C2 11.2 2 11.6 2 12v4c0 .6.4 1 1 1h2"></path><circle cx="7" cy="17" r="2"></circle><circle cx="17" cy="17" r="2"></circle></svg>
+                    </div>
+                    <div class="metric-content">
+                        <div class="val" id="adm-drivers-online">0</div>
+                        <div class="lbl">Drivers Online Now</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Live Rides View & Manual Interventions -->
+        <section class="card admin-section">
+            <div class="card-header">
+                <div class="card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+                    Live Rides Queue & Intervention Controls
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <select id="adm-filter-ride-status" style="width: 170px; font-size: 11px; padding: 6px;">
+                        <option value="">All Ride Statuses</option>
+                        <option value="requested">Stuck / Requested Only</option>
+                        <option value="matched">Matched</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                    <button id="adm-refresh-rides" class="btn btn-sm btn-secondary">Refresh Table</button>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ride ID</th>
+                            <th>Rider ID</th>
+                            <th>Coordinates (Pickup)</th>
+                            <th>Status</th>
+                            <th>Assigned Driver</th>
+                            <th>Created Timestamp</th>
+                            <th>Admin Interventions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adm-rides-table-body">
+                        <tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">Polling live rides...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 3: Driver Management View -->
+        <section class="card admin-section">
+            <div class="card-header">
+                <div class="card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+                    Driver Fleet Management & Admin Actions
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Driver</th>
+                            <th>Vehicle ID</th>
+                            <th>Coordinates</th>
+                            <th>Status</th>
+                            <th>Geohash</th>
+                            <th>Admin Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adm-drivers-table-body">
+                        <tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">Loading driver fleet...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 4: Analytics & Portfolio Reports Section -->
+        <section class="card admin-section">
+            <div class="card-header">
+                <div class="card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                    Analytics & Portfolio Metrics (7-Day Performance Trends)
+                </div>
+            </div>
+
+            <div class="grid-3">
+                <div class="chart-container">
+                    <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text-secondary);">Rides Per Day Trend</h4>
+                    <canvas id="chart-rides-day" height="140"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text-secondary);">Avg Wait Time Trend (sec)</h4>
+                    <canvas id="chart-wait-time" height="140"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text-secondary);">Driver Utilization Rate (%)</h4>
+                    <canvas id="chart-utilization" height="140"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div><strong>Ride Dispatch Engine</strong> · Admin Operations Control Center</div>
+            <div>Technology: <span class="code">Geohash</span> · <span class="code">Redis SETNX</span> · <span class="code">FastAPI</span></div>
+        </footer>
+    </div>
+
+    <!-- Modal for Driver Ride History -->
+    <div id="modal-driver-history" class="modal-overlay">
+        <div class="modal-content">
+            <div class="card-header">
+                <div class="card-title" id="history-modal-title">Driver Ride History</div>
+                <button id="btn-close-modal" class="btn btn-sm btn-secondary">Close</button>
+            </div>
+            <div class="table-wrapper" style="max-height: 300px; overflow-y: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ride ID</th>
+                            <th>Rider</th>
+                            <th>Distance (km)</th>
+                            <th>Wait Time (s)</th>
+                            <th>Completed At</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-modal-body">
+                        <tr><td colspan="5" style="text-align: center;">Loading history...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/admin_panel.js"></script>
+</body>
+</html>
